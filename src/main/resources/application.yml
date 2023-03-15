@@ -32,8 +32,9 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
 
 topic:
-  shop: shop-topic
-  result: shop-event
+  shop:
+    validator: topic-validator
+    status: topic-status
 
 logging:
   level:

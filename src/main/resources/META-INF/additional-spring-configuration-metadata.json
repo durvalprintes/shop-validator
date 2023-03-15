@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "topic.shop.validator",
+      "type": "java.lang.String",
+      "description": "Nome do tópico de validação da compra"
+    },
+    {
+      "name": "topic.shop.status",
+      "type": "java.lang.String",
+      "description": "Nome do tópico de status da compra"
+    }
+  ]
+}

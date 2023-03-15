@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.casa.codigo.constants.Status;
 import com.casa.codigo.dto.ShopDto;
 import com.casa.codigo.dto.ShopItemDto;
+import com.casa.codigo.dto.ShopStatusDto;
 import com.casa.codigo.model.Product;
 import com.casa.codigo.repository.ProductRepository;
 
@@ -22,25 +23,25 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ShopListener {
 
-  @Value(value = "${topic.result}")
-  private String topicResult;
+  @Value(value = "${topic.shop.status}")
+  private String topicStatus;
 
-  private final KafkaTemplate<String, ShopDto> kafkaTemplate;
+  private final KafkaTemplate<String, ShopStatusDto> kafkaTemplate;
 
   private final ProductRepository repository;
 
-  @KafkaListener(topics = "${topic.shop}", groupId = "group")
+  @KafkaListener(topics = "${topic.shop.validator}", groupId = "group")
   public void listenShopTopic(ShopDto dto) {
     try {
       log.info("Compra recebida no tópico: {}.", dto.getIdentifier());
-      List<ShopItemDto> validItems = dto.getItems().stream().takeWhile(item -> validShop(item)).toList();
+      List<ShopItemDto> validItems = dto.getItems().stream().takeWhile(this::validShop).toList();
       if (validItems.size() == dto.getItems().size())
-        shopSuccess(dto);
+        sendShopSuccess(dto);
       else
-        shopError(dto);
+        sendShopError(dto);
     } catch (Exception e) {
       log.error("Error: ", e.getMessage());
-      shopError(dto);
+      sendShopError(dto);
     }
   }
 
@@ -49,16 +50,14 @@ public class ShopListener {
     return product.isPresent() && product.get().getAmount() >= item.getAmount();
   }
 
-  private void shopError(ShopDto dto) {
-    log.info(" Erro no processamento da compra {}.", dto.getIdentifier());
-    dto.setStatus(Status.ERROR);
-    kafkaTemplate.send(topicResult, dto);
+  private void sendShopError(ShopDto dto) {
+    log.info("Erro no processamento da compra {}.", dto.getIdentifier());
+    kafkaTemplate.send(topicStatus, new ShopStatusDto(dto.getIdentifier(), Status.ERROR));
   }
 
-  private void shopSuccess(ShopDto dto) {
-    log.info(" Compra {} efetuada com sucesso.", dto.getIdentifier());
-    dto.setStatus(Status.SUCESS);
-    kafkaTemplate.send(topicResult, dto);
+  private void sendShopSuccess(ShopDto dto) {
+    log.info("Compra {} efetuada com sucesso.", dto.getIdentifier());
+    kafkaTemplate.send(topicStatus, new ShopStatusDto(dto.getIdentifier(), Status.SUCESS));
   }
 
 }
