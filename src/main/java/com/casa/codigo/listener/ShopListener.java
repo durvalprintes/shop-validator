@@ -33,14 +33,14 @@ public class ShopListener {
   @KafkaListener(topics = "${topic.shop.validator}", groupId = "group")
   public void listenShopTopic(ShopDto dto) {
     try {
-      log.info("Compra recebida no tópico: {}.", dto.getIdentifier());
+      log.info("Compra {} recebida no tópico.", dto.getIdentifier());
       List<ShopItemDto> validItems = dto.getItems().stream().takeWhile(this::validShop).toList();
       if (validItems.size() == dto.getItems().size())
         sendShopSuccess(dto);
       else
         sendShopError(dto);
     } catch (Exception e) {
-      log.error("Error: ", e.getMessage());
+      log.error("Error: {}", e.getMessage());
       sendShopError(dto);
     }
   }
@@ -57,7 +57,7 @@ public class ShopListener {
 
   private void sendShopSuccess(ShopDto dto) {
     log.info("Compra {} efetuada com sucesso.", dto.getIdentifier());
-    kafkaTemplate.send(topicStatus, new ShopStatusDto(dto.getIdentifier(), Status.SUCESS));
+    kafkaTemplate.send(topicStatus, new ShopStatusDto(dto.getIdentifier(), Status.SUCCESS));
   }
 
 }
